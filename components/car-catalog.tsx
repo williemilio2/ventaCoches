@@ -38,7 +38,7 @@ useEffect(() => {
       const res = await fetch("/api/cars")
       const data = await res.json()
 
-      setCars(data)
+      setCars(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error(error)
     } finally {
