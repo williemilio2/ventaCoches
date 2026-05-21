@@ -1,14 +1,12 @@
-import puppeteer from "puppeteer-core";
-const chromium = await import("@sparticuz/chromium");
+
+import puppeteer from "puppeteer";
 import { db } from "@/lib/db";
 
 async function scrapeWallapop() {
-const browser = await puppeteer.launch({
-  args: chromium.default.args,
-  defaultViewport: chromium.default.defaultViewport,
-  executablePath: await chromium.default.executablePath(),
-  headless: chromium.default.headless,
-});
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
 
   const page = await browser.newPage();
 
@@ -19,6 +17,7 @@ const browser = await puppeteer.launch({
     waitUntil: "networkidle2",
   });
 
+  // scroll automático
   await page.evaluate(async () => {
     await new Promise((resolve) => {
       let totalHeight = 0;
@@ -36,6 +35,7 @@ const browser = await puppeteer.launch({
     });
   });
 
+  // scrape coches
   const cars = await page.evaluate(() => {
     const items = document.querySelectorAll(
       "li.public-profile-published-items_PublicProfileItems__card__07pW2"
@@ -57,42 +57,59 @@ const browser = await puppeteer.launch({
 
 export async function GET() {
   try {
-    console.log("deploy fix")
     console.log("Scrapeando Wallapop...");
+
     const cars = await scrapeWallapop();
 
     if (!cars.length) {
-      throw new Error("Scrape vacío, no se toca la DB");
+      throw new Error("No se encontraron coches");
     }
 
-    // 1. guardar en tabla temporal
+    // limpiar tabla temporal
     await db.execute("DELETE FROM cars_temp");
 
+    // insertar nuevos coches
     for (const car of cars) {
       await db.execute({
         sql: `
-          INSERT INTO cars_temp (title, price, image, link, source)
+          INSERT INTO cars_temp
+          (title, price, image, link, source)
           VALUES (?, ?, ?, ?, ?)
         `,
-        args: [car.title, car.price, car.image, car.link, car.source],
+        args: [
+          car.title,
+          car.price,
+          car.image,
+          car.link,
+          car.source,
+        ],
       });
     }
 
-    // 2. swap seguro
+    // swap seguro
     await db.execute("DELETE FROM cars");
-    await db.execute("INSERT INTO cars SELECT * FROM cars_temp");
+
+    await db.execute(`
+      INSERT INTO cars (title, price, image, link, source)
+      SELECT title, price, image, link, source
+      FROM cars_temp
+    `);
 
     return Response.json({
       success: true,
       inserted: cars.length,
     });
   } catch (error) {
+    console.error(error);
+
     return Response.json(
       {
         success: false,
         error: error.message,
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
