@@ -4,10 +4,18 @@ import { Button } from "@/components/ui/button"
 import { ArrowDown, MessageCircle } from "lucide-react"
 import { useEffect, useState } from "react"
 
-import cars from '@/data/coches.json';
-
+type Car = {
+  id: number
+  title: string
+  price: string
+  image: string
+  link: string
+  source: string
+}
 export function CarCatalog() {
   const [showButton, setShowButton] = useState(true)
+const [cars, setCars] = useState<Car[]>([])
+const [loading, setLoading] = useState(true)
 
 useEffect(() => {
   const handleScroll = () => {
@@ -24,7 +32,29 @@ useEffect(() => {
 
   return () => window.removeEventListener("scroll", handleScroll)
 }, [])
+useEffect(() => {
+  async function fetchCars() {
+    try {
+      const res = await fetch("/api/cars")
+      const data = await res.json()
 
+      setCars(data)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  fetchCars()
+}, [])
+  if (loading) {
+    return (
+      <section className="py-20 text-center">
+        Cargando coches...
+      </section>
+    )
+  }
   return (
     <section id="catalogo" className="py-20 bg-background relative">
       {/* Botón flotante SOLO dentro de esta sección */}
@@ -57,11 +87,10 @@ useEffect(() => {
   )
 }
 
-function CarCard({ car }: { car: typeof cars[0] }) {
+function CarCard({ car }: { car: Car }) {
   const handleOpenLink = () => {
     window.open(car.link, "_blank")
   }
-
   return (
     <div className="group bg-card rounded-xl border border-border overflow-hidden hover:shadow-lg transition-all duration-300">
       <div className="relative aspect-[4/3] overflow-hidden">
