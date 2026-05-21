@@ -1,41 +1,25 @@
 
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import { db } from "@/lib/db";
 
 async function scrapeWallapop() {
   const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless,
   });
 
   const page = await browser.newPage();
 
-  const targetUrl =
-    "https://es.wallapop.com/user/joseg-60513568";
+  await page.goto(
+    "https://es.wallapop.com/user/joseg-60513568",
+    {
+      waitUntil: "networkidle2",
+    }
+  );
 
-  await page.goto(targetUrl, {
-    waitUntil: "networkidle2",
-  });
-
-  // scroll automático
-  await page.evaluate(async () => {
-    await new Promise((resolve) => {
-      let totalHeight = 0;
-      const distance = 800;
-
-      const timer = setInterval(() => {
-        window.scrollBy(0, distance);
-        totalHeight += distance;
-
-        if (totalHeight >= document.body.scrollHeight) {
-          clearInterval(timer);
-          resolve();
-        }
-      }, 300);
-    });
-  });
-
-  // scrape coches
   const cars = await page.evaluate(() => {
     const items = document.querySelectorAll(
       "li.public-profile-published-items_PublicProfileItems__card__07pW2"
@@ -57,18 +41,10 @@ async function scrapeWallapop() {
 
 export async function GET() {
   try {
-    console.log("Scrapeando Wallapop...");
-
     const cars = await scrapeWallapop();
 
-    if (!cars.length) {
-      throw new Error("No se encontraron coches");
-    }
-
-    // limpiar tabla temporal
     await db.execute("DELETE FROM cars_temp");
 
-    // insertar nuevos coches
     for (const car of cars) {
       await db.execute({
         sql: `
@@ -86,7 +62,6 @@ export async function GET() {
       });
     }
 
-    // swap seguro
     await db.execute("DELETE FROM cars");
 
     await db.execute(`
@@ -100,16 +75,13 @@ export async function GET() {
       inserted: cars.length,
     });
   } catch (error) {
-    console.error(error);
-
     return Response.json(
       {
         success: false,
         error: error.message,
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
+
