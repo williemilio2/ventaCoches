@@ -31,11 +31,11 @@ export function Hero() {
     </span>
   </h1>
 
-  <p className="text-lg md:text-xl text-muted-foreground mb-8 text-pretty max-w-2xl mx-auto text-stroke-white">
-    Coches de segunda mano en Alicante revisados, con garantía y listos para entrega
-    inmediata. Solo seleccionamos unidades que merecen la pena para que compres fácil, sin
-    complicaciones y con todo claro desde el principio
-  </p>
+<p className="text-lg md:text-xl text-white mb-8 text-pretty max-w-2xl mx-auto bg-black/20 backdrop-blur-[2px] px-6 py-4 rounded-2xl border border-white/10 ">
+  Coches de segunda mano en Alicante revisados, con garantía y listos para entrega
+  inmediata. Solo seleccionamos unidades que merecen la pena para que compres fácil, sin
+  complicaciones y con todo claro desde el principio
+</p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="#catalogo">
