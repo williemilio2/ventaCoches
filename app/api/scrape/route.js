@@ -58,24 +58,28 @@ const browser = await puppeteer.launch({
 export async function GET() {
   try {
     console.log("Scrapeando Wallapop...");
-
     const cars = await scrapeWallapop();
+
+    if (!cars.length) {
+      throw new Error("Scrape vacío, no se toca la DB");
+    }
+
+    // 1. guardar en tabla temporal
+    await db.execute("DELETE FROM cars_temp");
 
     for (const car of cars) {
       await db.execute({
         sql: `
-          INSERT OR IGNORE INTO cars (title, price, image, link, source)
+          INSERT INTO cars_temp (title, price, image, link, source)
           VALUES (?, ?, ?, ?, ?)
         `,
-        args: [
-          car.title,
-          car.price,
-          car.image,
-          car.link,
-          car.source,
-        ],
+        args: [car.title, car.price, car.image, car.link, car.source],
       });
     }
+
+    // 2. swap seguro
+    await db.execute("DELETE FROM cars");
+    await db.execute("INSERT INTO cars SELECT * FROM cars_temp");
 
     return Response.json({
       success: true,
