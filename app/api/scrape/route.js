@@ -57,6 +57,7 @@ const browser = await puppeteer.launch({
 
 export async function GET() {
   try {
+    console.log("deploy fix")
     console.log("Scrapeando Wallapop...");
     const cars = await scrapeWallapop();
 
