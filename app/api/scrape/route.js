@@ -1,13 +1,13 @@
 import puppeteer from "puppeteer-core";
-import chromium from "@sparticuz/chromium";
+const chromium = await import("@sparticuz/chromium");
 import { db } from "@/lib/db";
 
 async function scrapeWallapop() {
 const browser = await puppeteer.launch({
-  args: chromium.args,
-  defaultViewport: chromium.defaultViewport,
-  executablePath: await chromium.executablePath(),
-  headless: chromium.headless,
+  args: chromium.default.args,
+  defaultViewport: chromium.default.defaultViewport,
+  executablePath: await chromium.default.executablePath(),
+  headless: chromium.default.headless,
 });
 
   const page = await browser.newPage();
