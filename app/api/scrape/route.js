@@ -20,7 +20,9 @@ async function scrapeWallapop() {
       waitUntil: "networkidle2",
     }
   );
+    const bodyText = await page.evaluate(() => document.body.innerText);
 
+    console.log(bodyText.substring(0, 1000));
   const cars = await page.evaluate(() => {
     const items = document.querySelectorAll(
       "li.public-profile-published-items_PublicProfileItems__card__07pW2"
