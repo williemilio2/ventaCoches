@@ -5,15 +5,23 @@ const chromium = require("@sparticuz/chromium");
 import { db } from "@/lib/db";
 
 async function scrapeWallapop() {
+  const isProd = process.env.VERCEL === "1";
+
   const browser = await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
-    executablePath: await chromium.executablePath(),
-    headless: chromium.headless,
+    args: isProd ? chromium.args : [],
+    executablePath: isProd
+      ? await chromium.executablePath()
+      : "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    headless: true,
   });
 
   const page = await browser.newPage();
-
+    await page.setUserAgent(
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+    );
+    await page.setExtraHTTPHeaders({
+  "accept-language": "es-ES,es;q=0.9",
+});
   await page.goto(
     "https://es.wallapop.com/user/joseg-60513568",
     {
@@ -21,8 +29,8 @@ async function scrapeWallapop() {
     }
   );
     const bodyText = await page.evaluate(() => document.body.innerText);
-
-    console.log(bodyText.substring(0, 1000));
+    
+    console.log(bodyText.substring(0, 100000));
   const cars = await page.evaluate(() => {
     const items = document.querySelectorAll(
       "li.public-profile-published-items_PublicProfileItems__card__07pW2"
